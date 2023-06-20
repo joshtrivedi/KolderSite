@@ -35,20 +35,19 @@ function displayTableData(emails, files, fileName) {
         emails.forEach((email, index) => {
             const newRow = document.createElement('tr');
             newRow.innerHTML = `
-        <td class="px-4 py-2">${index + 1}</td>
+        <td class="px-4 py-2">${tableBody.childElementCount + 1}</td>
         <td class="px-4 py-2">${email}</td>
         <td class="px-4 py-2">${fileName}</td>
-
       `;
             newRow.addEventListener('click', () => {
-                selectRow(newRow, index, email, emails, fileName, files);
+                selectRow(newRow, index, email, emails);
             });
             tableBody.appendChild(newRow);
         });
     }
 }
 // Select row and enable editing
-function selectRow(row, index, email, emails, fileName, files) {
+function selectRow(row, index, email, emails) {
     const selectedRow = document.querySelector('.selected');
     if (selectedRow) {
         selectedRow.classList.remove('selected');
@@ -61,32 +60,17 @@ function selectRow(row, index, email, emails, fileName, files) {
         // Update the email value in the data array
         emails[index] = inputValue;
         // Update the text file
-        updateTextFile(emails, fileName, files);
+        updateTextFile(emails);
     }
 }
 // Update the text file with new email values
-function updateTextFile(emails, fileName, files) {
+function updateTextFile(emails) {
     const updatedText = emails.join(', ');
 }
 // Add to table button click event listener
-(_c = document.getElementById("addToTableButton")) === null || _c === void 0 ? void 0 : _c.addEventListener("click", () => {
-    var _a;
-    const inputValue = (_a = document.getElementById("inputField")) === null || _a === void 0 ? void 0 : _a.value;
-    if (inputValue) {
-        const newRow = document.createElement("tr");
-        newRow.innerHTML = `
-            <td class="px-4 py-2">-</td>
-            <td class="px-4 py-2">${inputValue}</td>
-        `;
-        const tableBody = document.getElementById("tableBody");
-        if (tableBody) {
-            tableBody.appendChild(newRow);
-        }
-    }
-});
 // Delete last row button click event listener
-(_d = document
-    .getElementById("addToFile")) === null || _d === void 0 ? void 0 : _d.addEventListener("click", () => {
+(_c = document
+    .getElementById("addToFile")) === null || _c === void 0 ? void 0 : _c.addEventListener("click", () => {
 });
 // Search for an email by ID or value
 function searchEmail() {
@@ -105,12 +89,37 @@ function searchEmail() {
             }
             else {
                 row.classList.remove("bg-yellow-200");
+                alert(`No table rows found for ${searchTerm}`);
             }
         }
     }
     else {
         alert("No table rows found!");
     }
+}
+(_d = document.getElementById("addToTableButton")) === null || _d === void 0 ? void 0 : _d.addEventListener("click", () => {
+    console.log("adding to table");
+    let emails = [];
+    const inputField = document.getElementById("manualRowField");
+    const inputValue = inputField.value.trim().toLowerCase();
+    if (inputValue) {
+        const tableBody = document.getElementById('tableBody');
+        if (tableBody) {
+            const newRow = document.createElement('tr');
+            newRow.innerHTML = `
+        <td class="px-4 py-2">${tableBody.childElementCount + 1}</td>
+        <td class="px-4 py-2">${inputValue}</td>
+      `;
+            emails.push(inputValue);
+            newRow.addEventListener('click', () => {
+                selectRow(newRow, tableBody.childElementCount + 1, inputValue, emails);
+            });
+            tableBody.appendChild(newRow);
+        }
+    }
+});
+function checkForDuplicates(emails, email) {
+    return emails.includes(email);
 }
 // Button click event listener for search
 (_e = document.getElementById("searchButton")) === null || _e === void 0 ? void 0 : _e.addEventListener("click", () => {
