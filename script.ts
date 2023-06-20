@@ -4,19 +4,128 @@ interface TableData {
   value: string;
 }
 
-// Fetch button click event listener
-document.getElementById("fetchButton")?.addEventListener("click", () => {
-  document.getElementById("fileInput")?.click();
+//validate an email 
+function validateEmail(email: string) {
+  const re = /\S+@\S+\.\S+/;
+  return re.test(email);
+}
+
+
+let url = "http://localhost:3001";
+let count = "http://localhost:3001/emailscount";
+
+
+document.addEventListener("DOMContentLoaded", () => {
+  fetchTextFileNames();
 });
 
-// File input change event listener
-document.getElementById("fileInput")?.addEventListener("change", () => {
-  const fileInput = document.getElementById("fileInput") as HTMLInputElement;
-  const files = fileInput.files;
-  if (files && files.length > 0) {
-    processEmailFiles(files);
+
+// Fetch button click event listener
+document.getElementById("fetchButton")?.addEventListener("click", () => {
+  const fileSelect = document.getElementById("fileDropDown") as HTMLSelectElement;
+  const selectedFile = fileSelect.value;
+  if (selectedFile !== "") {
+    const fileName = `${fileSelect.value}`;
+    emailsread(fileName).then((data) => {
+      const emails = data;
+      displayTableData(emails, fileName);
+    })
+
   }
 });
+
+document.getElementById("fileDropDown")?.addEventListener("click", () => {
+})
+
+// File dropdown change event listener
+document.getElementById("fileDropDown")?.addEventListener("change", () => {
+  const fileSelect = document.getElementById("fileDropDown") as HTMLSelectElement;
+  const selectedFile = fileSelect.value;
+  if (selectedFile !== "") {
+    const fileName = fileSelect.value;
+  }
+});
+
+// Populate file dropdown with text file names
+function populateFileDropdown(fileNames: string[]) {
+  const fileSelect = document.getElementById("fileDropDown") as HTMLSelectElement;
+
+  fileNames.forEach((fileName) => {
+    const option = document.createElement("option");
+    option.value = fileName;
+    option.textContent = fileName.replace("emails_", "").replace(".txt", "");
+    fileSelect.appendChild(option);
+  });
+}
+
+// Fetch available text file names with prefix "emails_"
+function fetchTextFileNames() {
+  const filePrefix = "emails_"; // Update with the desired prefix
+  const filePath = "./"; // Replace with the actual file path
+  const fileExtension = ".txt"; // Replace with the actual file extension
+  filenames().then((data) => {
+    const fileNames = data;
+    populateFileDropdown(fileNames);
+  })
+}
+
+const filecount = async () => {
+  const response = await fetch(`${url}/filecount`)
+  const data = await response.json()
+  return data
+}
+
+// fetch the emails from the API
+const emailsread = async (filename: string) => {
+  const response = await fetch(`${url}/emailsread/${filename}`)
+  const data = await response.json()
+  console.log(data)
+  return data
+}
+
+const filenames = async () => {
+  const response = await fetch(`${url}/filenames`)
+  const data = await response.json()
+  return data
+}
+
+
+const emailsedit = async (filename: string, emails: string) => {
+  try {
+    console.log(emails)
+    console.log(filename)
+    const response = await fetch(`${url}/emailsedit`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({filename: filename, filedata: emails})
+    });
+
+    if (response.ok) {
+      const data = await response.text();
+      console.log('Success:', data);
+      return data;
+    } else {
+      throw new Error('Failed to update emails');
+    }
+  } catch (error) {
+    console.error('Error:', error);
+    throw error;
+  }
+};
+
+// Call fetchTextFileNames to populate the dropdown initially
+
+
+// File input change event listener
+// document.getElementById("fileInput")?.addEventListener("change", () => {
+//   const fileInput = document.getElementById("fileInput") as HTMLInputElement;
+//   const files = fileInput.files;
+//   if (files && files.length > 0) {
+//     processEmailFiles(files);
+//   }
+// });
 
 // Process the selected email files
 function processEmailFiles(files: FileList) {
@@ -26,7 +135,7 @@ function processEmailFiles(files: FileList) {
     reader.onload = (event) => {
       const text = event.target?.result as string;
       const emails = text.split(",").map((email) => email.trim());
-      displayTableData(emails, files, file.name);
+      displayTableData(emails, file.name);
 
     };
     reader.readAsText(file);
@@ -35,20 +144,20 @@ function processEmailFiles(files: FileList) {
 
 
 // Display table data
-function displayTableData(emails: string[], files: FileList, fileName: string) {
+function displayTableData(emails: string[], fileName: string) {
   const tableBody = document.getElementById('tableBody');
   if (tableBody) {
     tableBody.innerHTML = '';
-
+    console.log(emails)
     emails.forEach((email, index) => {
       const newRow = document.createElement('tr');
       newRow.innerHTML = `
-        <td class="px-4 py-2">${tableBody.childElementCount + 1}</td>
-        <td class="px-4 py-2">${email}</td>
-        <td class="px-4 py-2">${fileName}</td>
+        <th class="px-4 py-2">${tableBody.childElementCount + 1}</th>
+        <th class="px-4 py-2">${email}</th>
+        <th class="px-4 py-2">${fileName}</th>
       `;
       newRow.addEventListener('click', () => {
-        selectRow(newRow, index, email, emails);
+        selectRow(newRow, index, email, emails, fileName);
       });
       tableBody.appendChild(newRow);
     });
@@ -56,7 +165,7 @@ function displayTableData(emails: string[], files: FileList, fileName: string) {
 }
 
 // Select row and enable editing
-function selectRow(row: HTMLTableRowElement, index: number, email: string, emails: string[]) {
+function selectRow(row: HTMLTableRowElement, index: number, email: string, emails: string[], filename: string) {
   const selectedRow = document.querySelector('.selected');
   if (selectedRow) {
     selectedRow.classList.remove('selected');
@@ -72,12 +181,12 @@ function selectRow(row: HTMLTableRowElement, index: number, email: string, email
     emails[index] = inputValue;
 
     // Update the text file
-    updateTextFile(emails);
+    updateTextFile(emails, filename);
   }
 }
 
 // Update the text file with new email values
-function updateTextFile(emails: any[]) {
+function updateTextFile(emails: any[], fileName: string) {
   const updatedText = emails.join(', ');
 }
 
@@ -101,8 +210,8 @@ function searchEmail() {
   const tableRows = document.getElementById("tableBody")?.getElementsByTagName("tr");
   if (tableRows) {
     for (const row of tableRows) {
-      const idCell = row.getElementsByTagName("td")[0];
-      const valueCell = row.getElementsByTagName("td")[1];
+      const idCell = row.getElementsByTagName("th")[0];
+      const valueCell = row.getElementsByTagName("th")[1];
       const idText = idCell.textContent?.trim().toLowerCase();
       const valueText = valueCell.textContent?.trim().toLowerCase();
 
@@ -122,27 +231,86 @@ document.getElementById("addToTableButton")?.addEventListener("click", () => {
   console.log("adding to table");
   let emails: string[] = [];
   const inputField = document.getElementById("manualRowField") as HTMLInputElement;
+  const fileSelect = document.getElementById("fileDropDown") as HTMLSelectElement;
+  const selectedFile = fileSelect.value;
   const inputValue = inputField.value.trim().toLowerCase();
-  if (inputValue) {
+  console.log(inputValue);
+  console.log(validateEmail(inputValue))
+  if (inputValue && validateEmail(inputValue)) {
     const tableBody = document.getElementById('tableBody');
-    if (tableBody) {
+    if (!tableBody) {
+      alert("Table body not found!");
+      return;
+    }
+    //get existing emails from the table
+    let existingEmails: string[] = [];
+    tableBody.querySelectorAll('tr').forEach((row) => {
+      const email = row.getElementsByTagName("th")[1].textContent?.trim().toLowerCase();
+      existingEmails.push(email!!);
+    });
+
+    if(checkForDuplicates(existingEmails, inputValue)) return alert("Email already exists in table");
+
+    if (selectedFile != "0" && tableBody.childElementCount != 0) {
       const newRow = document.createElement('tr');
       newRow.innerHTML = `
-        <td class="px-4 py-2">${tableBody.childElementCount + 1}</td>
-        <td class="px-4 py-2">${inputValue}</td>
+        <th class="px-4 py-2">${tableBody.childElementCount + 1}</th>
+        <th class="px-4 py-2">${inputValue}</th>
+        <th class="px-4 py-2">${selectedFile}</th>
       `;
       emails.push(inputValue);
       newRow.addEventListener('click', () => {
-        selectRow(newRow, tableBody.childElementCount + 1, inputValue, emails);
+        selectRow(newRow, tableBody.childElementCount + 1, inputValue, emails, selectedFile);
       });
+
       tableBody.appendChild(newRow);
+    } else {
+      alert("Please fetch the file to add the email to");
     }
+  } else {
+    alert("Please enter a valid email address");
   }
 });
+
 
 function checkForDuplicates(emails: string[], email: string) {
   return emails.includes(email);
 }
+
+document.getElementById("addToFile")?.addEventListener("click", async () => {
+  console.log("adding to file");
+  let emails: string = "";
+  let filename: string = "";
+  const tableBody = document.getElementById('tableBody');
+  if (!tableBody || tableBody.childElementCount == 0) {
+    alert("Table body not found!");
+    return;
+  }
+  for (let i = 0; i < tableBody.childElementCount; i++) {
+    const row = tableBody.children[i];
+    const email = row.children[1].textContent;
+    filename = row.children[2].textContent?? "";
+    if (email) {
+      emails += email + `, \n`;
+    }
+  }
+  if (emails.length > 0) {
+    // Call emailsedit to update the file with the new emails
+    try {
+      await emailsedit(filename, emails);
+      console.log("Emails updated successfully");
+      // Optionally, you can display a success message to the user
+      alert("Emails updated successfully");
+    } catch (error) {
+      console.error("Error updating emails:", error);
+      // Optionally, you can display an error message to the user
+      alert("Error updating emails. Please try again.");
+    }
+  } else {
+    alert("No emails found to update");
+  }
+
+})
 
 // Button click event listener for search
 document.getElementById("searchButton")?.addEventListener("click", () => {
