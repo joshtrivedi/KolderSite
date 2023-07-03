@@ -11,8 +11,8 @@ function validateEmail(email: string) {
 }
 
 
-let url = "http://localhost:3001";
-let count = "http://localhost:3001/emailscount";
+let url = "https://kolderapi-2d0888d2e9c3.herokuapp.com";
+let count = "https://kolderapi-2d0888d2e9c3.herokuapp.com/filecount";
 
 
 document.addEventListener("DOMContentLoaded", () => {

@@ -14,8 +14,8 @@ function validateEmail(email) {
     const re = /\S+@\S+\.\S+/;
     return re.test(email);
 }
-let url = "http://localhost:3001";
-let count = "http://localhost:3001/emailscount";
+let url = "https://kolderapi-2d0888d2e9c3.herokuapp.com";
+let count = "https://kolderapi-2d0888d2e9c3.herokuapp.com/filecount";
 document.addEventListener("DOMContentLoaded", () => {
     fetchTextFileNames();
 });
@@ -235,7 +235,7 @@ function searchEmail() {
             tableBody.appendChild(newRow);
         }
         else {
-            alert("Please select a file to add the email to");
+            alert("Please fetch the file to add the email to");
         }
     }
     else {
