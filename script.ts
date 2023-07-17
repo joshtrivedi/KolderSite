@@ -11,8 +11,8 @@ function validateEmail(email: string) {
 }
 
 
-let url = "https://kolderapi-2d0888d2e9c3.herokuapp.com";
-let count = "https://kolderapi-2d0888d2e9c3.herokuapp.com/filecount";
+let url = "http://35.208.82.140:3001";
+let count = "http://35.208.82.140:3001/filecount";
 
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -203,29 +203,51 @@ document
 
 
 // Search for an email by ID or value
+// ...
+
+// Search for an email by ID or value
 function searchEmail() {
   const searchInput = document.getElementById("manualRowField") as HTMLInputElement;
   const searchTerm = searchInput.value.trim().toLowerCase();
 
   const tableRows = document.getElementById("tableBody")?.getElementsByTagName("tr");
   if (tableRows) {
+    let foundRow: HTMLTableRowElement | null = null; // Variable to store the first highlighted row
+
     for (const row of tableRows) {
       const idCell = row.getElementsByTagName("th")[0];
       const valueCell = row.getElementsByTagName("th")[1];
       const idText = idCell.textContent?.trim().toLowerCase();
       const valueText = valueCell.textContent?.trim().toLowerCase();
 
-      if (idText === searchTerm || valueText!!.includes(searchTerm)) {
+      if (idText === searchTerm || valueText?.includes(searchTerm)) {
         row.classList.add("bg-yellow-200");
+        if (!foundRow) {
+          foundRow = row; // Store the first highlighted row
+        }
       } else {
         row.classList.remove("bg-yellow-200");
-        //alert(`No table rows found for ${searchTerm}`)
       }
+    }
+
+    if (foundRow) {
+      foundRow.scrollIntoView({ behavior: "smooth", block: "center" }); // Scroll to the first highlighted row
     }
   } else {
     alert("No table rows found!");
   }
 }
+
+// ...
+
+
+// ...
+// ...
+
+// Regular expression for email validation
+const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+// ...
 
 document.getElementById("addToTableButton")?.addEventListener("click", () => {
   console.log("adding to table");
@@ -235,42 +257,58 @@ document.getElementById("addToTableButton")?.addEventListener("click", () => {
   const selectedFile = fileSelect.value;
   const inputValue = inputField.value.trim().toLowerCase();
   console.log(inputValue);
-  console.log(validateEmail(inputValue))
-  if (inputValue && validateEmail(inputValue)) {
+
+  if (inputValue) {
     const tableBody = document.getElementById('tableBody');
     if (!tableBody) {
       alert("Table body not found!");
       return;
     }
-    //get existing emails from the table
+    // Get existing emails from the table
     let existingEmails: string[] = [];
     tableBody.querySelectorAll('tr').forEach((row) => {
       const email = row.getElementsByTagName("th")[1].textContent?.trim().toLowerCase();
       existingEmails.push(email!!);
     });
 
-    if(checkForDuplicates(existingEmails, inputValue)) return alert("Email already exists in table");
+    // Split the input value into multiple emails
+    const inputEmails = inputValue.split(",").map((email) => email.trim());
 
-    if (selectedFile != "0" && tableBody.childElementCount != 0) {
-      const newRow = document.createElement('tr');
-      newRow.innerHTML = `
-        <th class="px-4 py-2">${tableBody.childElementCount + 1}</th>
-        <th class="px-4 py-2">${inputValue}</th>
-        <th class="px-4 py-2">${selectedFile}</th>
-      `;
-      emails.push(inputValue);
-      newRow.addEventListener('click', () => {
-        selectRow(newRow, tableBody.childElementCount + 1, inputValue, emails, selectedFile);
-      });
+    // Add each email to the table if it's a valid email and not a duplicate
+    inputEmails.forEach((email) => {
+      if(!emailRegex.test(email)) {
+        alert(`Please enter valid email(s) seperated by a ','`);
+        return;
+      }
 
-      tableBody.appendChild(newRow);
-    } else {
-      alert("Please fetch the file to add the email to");
-    }
+      if (email && emailRegex.test(email) && !checkForDuplicates(existingEmails, email)) {
+        const newRow = document.createElement('tr');
+        newRow.innerHTML = `
+          <th class="px-4 py-2">${tableBody.childElementCount + 1}</th>
+          <th class="px-4 py-2">${email}</th>
+          <th class="px-4 py-2">${selectedFile}</th>
+        `;
+        emails.push(email);
+        newRow.addEventListener('click', () => {
+          selectRow(newRow, tableBody.childElementCount + 1, email, emails, selectedFile);
+        });
+
+        tableBody.appendChild(newRow);
+        existingEmails.push(email); // Add the email to the existing emails array
+      }
+    });
+
+    inputField.value = ""; // Clear the input field
   } else {
-    alert("Please enter a valid email address");
+    alert("Please enter at least one email address");
   }
 });
+
+// ...
+
+
+// ...
+
 
 
 function checkForDuplicates(emails: string[], email: string) {
